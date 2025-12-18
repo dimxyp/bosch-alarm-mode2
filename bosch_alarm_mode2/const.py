@@ -49,12 +49,14 @@ ERROR = {
     0xEF: "Bad Remote Enable",
 }
 
+
 class PANEL_FAMILY(Enum):
     BG_SERIES = "BG_SERIES"
     SOLUTION = "SOLUTION"
     AMAX = "AMAX"
 
-@dataclass(frozen=True) 
+
+@dataclass(frozen=True)
 class PanelModel:
     name: str
     family: PANEL_FAMILY
@@ -192,6 +194,13 @@ class DOOR_ACTION:
     SECURE = 0x04
     TERMINATE_SECURE = 0x05
 
+
+class POINT_ACTION:
+    NO_ACTION = 0x00
+    BYPASS = 0x01
+    UNBYPASS = 0x02
+
+
 class ALARM_MEMORY_PRIORITIES:
     BURGLARY_TROUBLE = 0x01
     BURGLARY_SUPERVISORY = 0x02
@@ -205,7 +214,7 @@ class ALARM_MEMORY_PRIORITIES:
     FIRE_ALARM = 0x0A
 
     PRIORITY_ALARMS = [0x07, 0x09, 0x0A]
-    
+
     TEXT = {
         BURGLARY_TROUBLE: "Burglary Trouble",
         BURGLARY_SUPERVISORY: "Burglary Supervisory",
@@ -221,18 +230,18 @@ class ALARM_MEMORY_PRIORITIES:
 
 
 class ALARM_PANEL_FAULTS:
-    PHONE_LINE_FAILURE = (1 << 1)
-    PARAMETER_CRC_FAIL_IN_PIF = (1 << 2)
-    BATTERY_LOW = (1 << 3)
-    BATTERY_MISING = (1 << 4)
-    AC_FAIL = (1 << 5)
-    COMMUNICATION_FAIL_SINCE_RPS_HANG_UP = (1 << 7)
-    SDI_FAIL_SINCE_RPS_HANG_UP = (1 << 8)
-    USER_CODE_TAMPER_SINCE_RPS_HANG_UP = (1 << 9)
-    FAIL_TO_CALL_RPS_SINCE_RPS_HANG_UP = (1 << 10)
-    POINT_BUS_FAIL_SINCE_RPS_HANG_UP = (1 << 13)
-    LOG_OVERFLOW = (1 << 14)
-    LOG_THRESHOLD = (1 << 15)
+    PHONE_LINE_FAILURE = 1 << 1
+    PARAMETER_CRC_FAIL_IN_PIF = 1 << 2
+    BATTERY_LOW = 1 << 3
+    BATTERY_MISING = 1 << 4
+    AC_FAIL = 1 << 5
+    COMMUNICATION_FAIL_SINCE_RPS_HANG_UP = 1 << 7
+    SDI_FAIL_SINCE_RPS_HANG_UP = 1 << 8
+    USER_CODE_TAMPER_SINCE_RPS_HANG_UP = 1 << 9
+    FAIL_TO_CALL_RPS_SINCE_RPS_HANG_UP = 1 << 10
+    POINT_BUS_FAIL_SINCE_RPS_HANG_UP = 1 << 13
+    LOG_OVERFLOW = 1 << 14
+    LOG_THRESHOLD = 1 << 15
 
     TEXT = {
         PHONE_LINE_FAILURE: "Phone line failure",
@@ -285,6 +294,7 @@ class CMD:
     # Point group
     REQUEST_CONFIGURED_POINTS = 0x35
     POINT_STATUS = 0x38
+    SET_POINT_STATE = 0x39
     POINT_TEXT = 0x3C
     # System group
     SET_SUBSCRIPTION = 0x5F

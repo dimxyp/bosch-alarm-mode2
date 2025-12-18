@@ -20,6 +20,7 @@ from .const import (
     PANEL_FAMILY,
     PanelModel,
     PANEL_MODELS,
+    POINT_ACTION,
     POINT_STATUS,
     USER_TYPE,
 )
@@ -109,10 +110,10 @@ class Area(PanelEntity):
 
     def is_part_armed_delay(self) -> bool:
         return self.status in AREA_STATUS.PART_ARMED_DELAY
-    
+
     def is_part_armed_instant(self) -> bool:
         return self.status in AREA_STATUS.PART_ARMED_INSTANT
-    
+
     def is_part_armed(self) -> bool:
         return self.status in AREA_STATUS.PART_ARMED
 
@@ -216,7 +217,7 @@ class Panel:
         self._poll_task: asyncio.Task[None] | None = None
 
         # Model is always set by basicinfo
-        self.model: PanelModel = None # type: ignore[assignment]
+        self.model: PanelModel = None  # type: ignore[assignment]
         self.protocol_version: str | None = None
         self.firmware_version: str | None = None
         self.serial_number: int | None = None
@@ -228,7 +229,10 @@ class Panel:
         self.outputs: dict[int, Output] = {}
         self.doors: dict[int, Door] = {}
 
-        self._partial_arming_id = (AREA_ARMING_STATUS.PERIMETER_DELAY, AREA_ARMING_STATUS.PERIMETER_INSTANT)
+        self._partial_arming_id = (
+            AREA_ARMING_STATUS.PERIMETER_DELAY,
+            AREA_ARMING_STATUS.PERIMETER_INSTANT,
+        )
         self._all_arming_id = (AREA_ARMING_STATUS.MASTER_DELAY, AREA_ARMING_STATUS.MASTER_INSTANT)
         self._supports_serial = False
         self._supports_door = False
@@ -314,6 +318,12 @@ class Panel:
 
     async def door_secure(self, door_id: int) -> None:
         await self._door_set_state(door_id, DOOR_ACTION.SECURE)
+
+    async def point_bypass(self, point_id: int) -> None:
+        await self._point_set_state(point_id, POINT_ACTION.BYPASS)
+
+    async def point_unbypass(self, point_id: int) -> None:
+        await self._point_set_state(point_id, POINT_ACTION.UNBYPASS)
 
     def connection_status(self) -> bool:
         return self._connection is not None and bool(self.points) and bool(self.areas)
@@ -482,7 +492,7 @@ class Panel:
 
     async def _authenticate_automation_user(self, user_type: int) -> None:
         creds = bytearray([user_type])  # automation user
-        creds.extend(map(ord, self._automation_code)) # type: ignore[arg-type]
+        creds.extend(map(ord, self._automation_code))  # type: ignore[arg-type]
         creds.append(0x00)  # null terminate
         result = await self._send_command(CMD.AUTHENTICATE, creds)
         if result and result[0] == 0x01:
@@ -543,7 +553,7 @@ class Panel:
         if data[0] <= 0x28:
             self._partial_arming_id = (AREA_ARMING_STATUS.STAY1, None)
             self._all_arming_id = (AREA_ARMING_STATUS.AWAY, None)
-        
+
         # Section 13.2 of the protocol spec.
         bitmask = data[23:].ljust(33, b"\0")
         # As detailed in https://github.com/mag1024/bosch-alarm-mode2/pull/20
@@ -603,7 +613,9 @@ class Panel:
 
     @property
     def panel_faults(self) -> list[str]:
-        return [fault for mask, fault in ALARM_PANEL_FAULTS.TEXT.items() if self._faults_bitmap & mask]
+        return [
+            fault for mask, fault in ALARM_PANEL_FAULTS.TEXT.items() if self._faults_bitmap & mask
+        ]
 
     @property
     def panel_faults_ids(self) -> list[int]:
@@ -724,7 +736,7 @@ class Panel:
             point = BE_INT.int16(response_detail, 3)
             if point == 0xFFFF:
                 # # 0xFFFF is sentinel that indicates that more points are available.
-                # Issues a follow-up starting at the last valid point. 
+                # Issues a follow-up starting at the last valid point.
                 await self._get_alarms_for_priority(priority, last_area, last_point)
                 return
             last_area = area
@@ -790,6 +802,11 @@ class Panel:
     async def _door_set_state(self, door_id: int, state: int) -> None:
         request = bytearray([door_id, state])
         await self._send_command(CMD.SET_DOOR_STATE, request)
+
+    async def _point_set_state(self, point_id: int, state: int) -> None:
+        request = bytearray(point_id.to_bytes(2, "big"))
+        request.append(state)
+        await self._send_command(CMD.SET_POINT_STATE, request)
 
     async def _area_arm(self, area_id: int, arm_type: int) -> None:
         request = bytearray([arm_type])
@@ -922,5 +939,5 @@ class Panel:
                 finalizer()
 
     @staticmethod
-    def _get_arming_id(delay: bool, delay_id: int, instant_id: int | None) -> int:        
+    def _get_arming_id(delay: bool, delay_id: int, instant_id: int | None) -> int:
         return delay_id if delay or instant_id is None else instant_id
