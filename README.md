@@ -7,6 +7,7 @@ In practice, this library has only been tested with B8512G and the B5512 and the
 #### Features
 - Retrieving area and point status
 - Arming/disarming areas
+- Bypassing/unbypassing zones (points)
 - Push based updates (for panels that support it)
 
 #### Authentication
